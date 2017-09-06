@@ -1,0 +1,60 @@
+PROJECT_ID := mt7620
+BOOTLOADER_DIR := Uboot
+USE_LOCAL_BUSYBOX:=y
+BUSYBOX_DIR:=busybox.nas
+#REAL_KERNEL_PATH:=../RT288x_SDK_4110/source/linux-2.6.36MT.x
+
+include $(USERAPPS_ROOT)/configs/mt7620/menu_wireless_router_efm
+include $(USERAPPS_ROOT)/configs/mt7620/common_config
+include $(USERAPPS_ROOT)/configs/mt7620/apps_config
+-include $(USERAPPS_ROOT)/lang_config
+
+CPU_ID:=mt7620
+IF_WAN:=\"eth2.2\"
+IF_LAN:=\"eth2.1\"
+IF_LAN_PHY:=\"eth2\"
+IF_LOCAL:=\"br0\"
+IF_WIRELESS:=\"ra0\"
+IF_WIRELESS_5G:=\"rai0\"
+IF_USB:=\"usb0\"
+
+IF_WIRELESS_PREFIX:=\"ra\"
+IF_WIRELESS_5G_PREFIX:=\"rai\"
+
+IF_WIRELESS_WDS_PREFIX:=\"wds\"
+IF_WIRELESS_5G_WDS_PREFIX:=\"wdsi\"
+
+USE_MOUNT_PTS:=y
+
+
+ifeq ($(USE_MULTI_BRIDGE_SUPPORT),y)
+IF_WWAN:=\"apcli0\"
+IF_WWAN_5G:=\"apclii0\"
+endif
+
+# dummy
+IF_WAN2:=\"eth3\"
+
+#ifeq ($(KOREAN_SUPPORT),y)
+#USE_ISPFAKE:=y
+#endif
+
+#USE_SAVE_INFO:=y
+WIRELESS_SSID_TEST_DUP:=y
+USE_WPS_PINCODE_FLASH:=y
+USE_COEX_OPTION:=y
+# USE_WPS_NOTIFICATION:=y
+-include $(USERAPPS_ROOT)/misc_config
+
+ifneq ($(USE_ROUTER_NAS),y)
+#BUSYBOX_DIR:=busybox-1.8.2.sizeopti
+BUSYBOX_DIR:=busybox-1.8.2
+endif
+
+USE_NEW_MAC_SCHEME:=y
+
+#ifeq ($(KOREAN_SUPPORT),)
+#USE_PLANTYNET:=n
+#endif
+
+USE_TCPMSS_IPTABLES_RULE:=y

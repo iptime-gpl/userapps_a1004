@@ -1,0 +1,963 @@
+Binary files MT7610_ap/.Kconfig.swp and /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/.Kconfig.swp differ
+Only in MT7610_ap: .built-in.o.cmd
+Only in MT7610_ap: 3.0.0.7_Patchfile
+Only in MT7610_ap: CVS
+diff -rw MT7610_ap/Makefile /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/Makefile
+339,342d338
+< 
+< EXTRA_CFLAGS += -DEFM_MISC_PATCH=1 -DUSE_MAC_TRY_TABLE=1
+< 
+< 
+Only in MT7610_ap: a
+Only in MT7610_ap/ap: .ap.o.cmd
+Only in /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/ap: .ap.o.d
+Only in MT7610_ap/ap: .ap_assoc.o.cmd
+Only in MT7610_ap/ap: .ap_auth.o.cmd
+Only in MT7610_ap/ap: .ap_autoChSel.o.cmd
+Only in MT7610_ap/ap: .ap_cfg.o.cmd
+Only in MT7610_ap/ap: .ap_connect.o.cmd
+Only in MT7610_ap/ap: .ap_data.o.cmd
+Only in MT7610_ap/ap: .ap_mlme.o.cmd
+Only in MT7610_ap/ap: .ap_qload.o.cmd
+Only in MT7610_ap/ap: .ap_sanity.o.cmd
+Only in MT7610_ap/ap: .ap_sync.o.cmd
+Only in MT7610_ap/ap: .ap_wpa.o.cmd
+Only in MT7610_ap/ap: CVS
+
+diff -rw MT7610_ap/ap/ap.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/ap/ap.c
+959c959,961
+< 
+---
+> #ifdef MT76x0
+> 	BOOLEAN bDisableSF = FALSE;
+> #endif /* MT76x0 */
+1018a1021,1025
+> #ifdef MT76x0
+> 			if (pEntry->RssiSample.AvgRssi0 > -62)
+> 				bDisableSF = TRUE;
+> #endif /* MT76x0 */
+> 
+1338a1346,1376
+> #ifdef MT76x0
+> 		if (pEntry->RssiSample.AvgRssi0 > -62)
+> 			bDisableSF = TRUE;
+> #endif /* MT76x0 */
+> 	}
+> 
+> #ifdef MT76x0
+> 	if (IS_MT76x0(pAd) && (pAd->CommonCfg.BBPCurrentBW == BW_80))
+> 	{
+> 		UINT32 reg_val = 0;
+> 		RTMP_IO_READ32(pAd, RXO_R18, &reg_val);
+> 		if (bDisableSF && ((reg_val & 0x1) == 0x1))
+> 		{
+> 			/*
+> 				0x2948[0] = 0
+> 			*/
+> 			reg_val &= ~(0x1);	
+> 			RTMP_IO_WRITE32(pAd, RXO_R18, reg_val);
+> 		}
+> 		else if ((!bDisableSF) && ((reg_val & 0x1) == 0x0))
+> 		{
+> 			/*
+> 				0x2948[0] = 1
+> 			*/
+> 			reg_val |= 1;
+> 			RTMP_IO_WRITE32(pAd, RXO_R18, reg_val);
+> 		}
+> 		/*
+> 		else 
+> 			do nothing, we don't need to change RXO_R18
+> 		*/
+1339a1378,1379
+> 		
+> #endif /* MT76x0 */
+Only in MT7610_ap/ap: ap.o
+diff -rw MT7610_ap/ap/ap_apcli.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/ap/ap_apcli.c
+2520a2521
+> 		pApCliEntry->pAd = pAd;
+2523d2523
+< 		pApCliEntry->pAd = pAd;
+Only in MT7610_ap/ap: ap_assoc.o
+Only in MT7610_ap/ap: ap_auth.o
+Only in MT7610_ap/ap: ap_autoChSel.o
+diff -rw MT7610_ap/ap/ap_cfg.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/ap/ap_cfg.c
+610,615d609
+< #ifdef EFM_MISC_PATCH
+< INT Set_LED_Proc(
+<         IN PRTMP_ADAPTER pAd,
+<         IN PUCHAR arg);
+< #endif
+< 
+1081,1084d1074
+< #ifdef EFM_MISC_PATCH
+<         {"Led",                                 Set_LED_Proc},
+< #endif
+< 
+1993d1982
+< 
+11185,11258d11173
+< 
+< #ifdef EFM_MISC_PATCH
+< #undef printk
+< INT Set_LED_Proc(
+<         IN PRTMP_ADAPTER pAd,
+<         IN PUCHAR arg)
+< {
+<         UCHAR flag = simple_strtol(arg, 0, 10);
+< 
+< #if     0
+<         printk("LED set %d\n", flag);
+<         RTMPSetLED(pAd, flag);
+< #else
+< #ifdef CONFIG_RALINK_MT7620
+<        UINT8 cmd = (UINT8)simple_strtol(arg, 0, 10);
+<        /*
+<                0x2300[5] Default Antenna:
+<                0 for WIFI main antenna
+<                1  for WIFI aux  antenna
+< 
+<        */
+< 
+<        if (cmd < 33)
+<        {
+< 		if(cmd == 0)
+< 			AndesLedOP(pAd, 0, 1); /* keep off */
+< 		else if(cmd == 1)
+< 			AndesLedOP(pAd, 0, 0); /* keep on */
+< 		else
+< 			AndesLedOP(pAd, 0, 2); /* blink on */
+< 	
+< 		DBGPRINT(RT_DEBUG_TRACE, ("%s:cmd:0x%x\n", __FUNCTION__, cmd));
+<        }
+<        return TRUE;
+< #else
+<         /* Turn OFF */
+<         if(flag == 0)
+<         {
+<                 /* Turn Off Blink */
+<                 AsicSendCommandToMcu(pAd, MCU_SET_LED_POLARITY, 0xff, 0xF8, 0xAD, FALSE);
+<                 AsicSendCommandToMcu(pAd, MCU_SET_LED_ACT_CFG, 0xff, 0x21, 0x21, FALSE);
+<                 AsicSendCommandToMcu(pAd, MCU_SET_LED_MODE, 0xff, MCU_SET_LED_MODE, LINK_STATUS_GBAND_LINK_UP, FALSE);
+<                 //RTMPSetLED(pAd, flag);
+<         }
+<         /* Turn ON */
+<         else if(flag == 1)
+<         {
+<                 /* Turn On */
+<                 AsicSendCommandToMcu(pAd, MCU_SET_LED_ACT_CFG, 0xff, 0x21, 0x21, FALSE);
+<                 AsicSendCommandToMcu(pAd, MCU_SET_LED_POLARITY, 0xff, 0xF8, 0xA9, FALSE);
+<                 AsicSendCommandToMcu(pAd, MCU_SET_LED_MODE, 0xff, MCU_SET_LED_MODE, LINK_STATUS_GBAND_LINK_UP, FALSE);
+<                 //RTMPSetLED(pAd, flag);
+<         }
+<         else if(flag == 2)
+<         {
+<                 /* Turn ON & Blinking ACT*/
+<                 AsicSendCommandToMcu(pAd, MCU_SET_LED_ACT_CFG, 0xff, 0x21, 0x22, FALSE);
+<                 AsicSendCommandToMcu(pAd, MCU_SET_LED_POLARITY, 0xff, 0xF8, 0xA9, FALSE);
+<                 AsicSendCommandToMcu(pAd, MCU_SET_LED_MODE, 0xff, MCU_SET_LED_MODE, LINK_STATUS_GBAND_LINK_UP, FALSE);
+<                 //RTMPSetLED(pAd, flag);
+<         }
+<         else if(flag == 3)
+<         {
+<                 /* Turn Off Blink */
+<                 AsicSendCommandToMcu(pAd, MCU_SET_LED_ACT_CFG, 0xff, 0x21, 0x22, FALSE);
+<                 AsicSendCommandToMcu(pAd, MCU_SET_LED_POLARITY, 0xff, 0xF8, 0xAD, FALSE);
+<                 //RTMPSetLED(pAd, flag);
+<         }
+< #endif
+< #endif
+< 
+<         return TRUE;
+< }
+< #endif
+Only in MT7610_ap/ap: ap_cfg.o
+Only in MT7610_ap/ap: ap_connect.o
+diff -rw MT7610_ap/ap/ap_data.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/ap/ap_data.c
+6413,6421d6412
+< #ifdef EFM_MISC_PATCH
+<                                 if (pAd->ApCfg.MBSSID[pEntry->apidx].IsolateInterStaTrafficBTNBSSID == 1 ||
+<                                         ((FromWhichBSSID < MAX_MBSSID_NUM(pAd)) &&
+<                                         (FromWhichBSSID < HW_BEACON_MAX_NUM) &&
+<                                         (pAd->ApCfg.MBSSID[pEntry->apidx].VLAN_VID != pAd->ApCfg.MBSSID[FromWhichBSSID].VLAN_VID)))
+<                                         /* destination VLAN ID != source VLAN ID */
+< 
+< 
+< #else
+6427d6417
+< #endif
+Only in MT7610_ap/ap: ap_data.o
+Only in MT7610_ap/ap: ap_mlme.o
+Only in MT7610_ap/ap: ap_qload.o
+Only in MT7610_ap/ap: ap_sanity.o
+diff -rw MT7610_ap/ap/ap_sync.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/ap/ap_sync.c
+1349c1349
+< 	return (pAd->Mlme.ApSyncMachine.CurrState == AP_SCAN_LISTEN) ? TRUE : FALSE;
+---
+> 	return (pAd->Mlme.ApSyncMachine.CurrState != AP_SYNC_IDLE) ? TRUE : FALSE;
+Only in MT7610_ap/ap: ap_sync.o
+Only in MT7610_ap/ap: ap_wpa.o
+Only in MT7610_ap/ap: b
+Only in MT7610_ap/ate: CVS
+Only in MT7610_ap/ate/chips: CVS
+Only in MT7610_ap/ate/common: CVS
+diff -rw MT7610_ap/ate/common/rt_ate.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/ate/common/rt_ate.c
+2076,2083d2075
+< 
+< #ifdef MT76x0
+< 	if(IS_MT76x0(pAd))
+< 	{
+< 		RtmpOsMsDelay(200);
+< 	}
+< #endif
+< 
+2237,2244d2228
+< #ifdef MT76x0
+< 	if(IS_MT76x0(pAd))
+< 	{
+< 		RtmpOsMsDelay(100);
+< 	}
+< #endif
+< 
+< 
+2372,2378d2355
+< 
+< #ifdef MT76x0
+< 		if(IS_MT76x0(pAd))
+< 		{
+< 			ATEAsicSwitchChannel(pAd);
+< 		}
+< #endif
+Only in MT7610_ap/ate/include: CVS
+Only in MT7610_ap: built-in.o
+Only in MT7610_ap/chips: .mt76x0.o.d
+Only in MT7610_ap/chips: .rt65xx.o.cmd
+Only in MT7610_ap/chips: .rtmp_chip.o.cmd
+Only in MT7610_ap/chips: CVS
+diff -rw MT7610_ap/chips/mt76x0.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/chips/mt76x0.c
+3730,3741d3729
+< 
+<                 /* update PMU_OCLEVEL<5:1> from default 10010 to 11011 */
+<                 UINT32 Value=0;
+<                 RTMP_IO_READ32(pAd, LDO_CTRL_0, &Value);
+<                 Value = Value & (~0x3E);
+<                 Value |= 0x36;
+<                 RTMP_IO_WRITE32(pAd, LDO_CTRL_0, Value);
+<                 RTMP_IO_READ32(pAd, LDO_CTRL_0, &Value);
+<                 DBGPRINT(RT_DEBUG_TRACE,
+<                                 ("%s - LDO_CTRL_0 value before RX_IQ calibration: 0x%x\n",
+<                                 __FUNCTION__, Value));
+< 
+Only in MT7610_ap/chips: rt65xx.o
+Only in MT7610_ap/chips: rtmp_chip.o
+Only in MT7610_ap/common: .action.o.cmd
+Only in MT7610_ap/common: .ba_action.o.cmd
+Only in MT7610_ap/common: .cmm_aes.o.cmd
+Only in MT7610_ap/common: .cmm_asic.o.cmd
+Only in MT7610_ap/common: .cmm_cfg.o.cmd
+Only in MT7610_ap/common: .cmm_cmd.o.cmd
+Only in MT7610_ap/common: .cmm_data.o.cmd
+Only in MT7610_ap/common: .cmm_data_pci.o.cmd
+Only in MT7610_ap/common: .cmm_info.o.cmd
+Only in MT7610_ap/common: .cmm_mac_pci.o.cmd
+Only in MT7610_ap/common: .cmm_profile.o.cmd
+Only in MT7610_ap/common: .cmm_radar.o.cmd
+Only in MT7610_ap/common: .cmm_sanity.o.cmd
+Only in MT7610_ap/common: .cmm_sync.o.cmd
+Only in MT7610_ap/common: .cmm_tkip.o.cmd
+Only in MT7610_ap/common: .cmm_wep.o.cmd
+Only in MT7610_ap/common: .cmm_wpa.o.cmd
+Only in MT7610_ap/common: .crypt_aes.o.cmd
+Only in MT7610_ap/common: .crypt_arc4.o.cmd
+Only in MT7610_ap/common: .crypt_hmac.o.cmd
+Only in MT7610_ap/common: .crypt_md5.o.cmd
+Only in MT7610_ap/common: .crypt_sha2.o.cmd
+Only in MT7610_ap/common: .ee_efuse.o.cmd
+Only in MT7610_ap/common: .ee_prom.o.cmd
+Only in MT7610_ap/common: .eeprom.o.cmd
+Only in MT7610_ap/common: .mlme.o.cmd
+Only in MT7610_ap/common: .ps.o.cmd
+Only in MT7610_ap/common: .rt_channel.o.cmd
+Only in MT7610_ap/common: .rt_os_util.o.cmd
+Only in MT7610_ap/common: .rt_rf.o.cmd
+Only in MT7610_ap/common: .rtmp_init.o.cmd
+Only in MT7610_ap/common: .rtmp_init_inf.o.cmd
+Only in MT7610_ap/common: .rtmp_timer.o.cmd
+Only in MT7610_ap/common: .scan.o.cmd
+Only in MT7610_ap/common: .spectrum.o.cmd
+Only in MT7610_ap/common: .txpower.o.cmd
+Only in MT7610_ap/common: .uapsd.o.cmd
+Only in MT7610_ap/common: .vht.o.cmd
+Only in MT7610_ap/common: CVS
+Only in MT7610_ap/common: action.o
+Only in MT7610_ap/common: b
+Only in MT7610_ap/common: ba_action.o
+Only in MT7610_ap/common: cmm_aes.o
+Only in MT7610_ap/common: cmm_asic.o
+diff -rw MT7610_ap/common/cmm_cfg.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/common/cmm_cfg.c
+871,877d870
+< #ifdef EFM_MISC_PATCH
+<                 case CMD_RTPRIV_IOCTL_SIOCGIWFREQ_CENTRAL:
+<                         /* get channel number */
+<                         *(ULONG *)pData = pAd->CommonCfg.CentralChannel;
+<                         break;
+< #endif
+< 
+Only in MT7610_ap/common: cmm_cfg.o
+Only in MT7610_ap/common: cmm_cmd.o
+Only in MT7610_ap/common: cmm_data.o
+Only in MT7610_ap/common: cmm_data_pci.o
+diff -rw MT7610_ap/common/cmm_info.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/common/cmm_info.c
+1355,1358d1354
+< #ifdef EFM_MISC_PATCH
+<         UCHAR           i;
+<         MAC_TABLE_ENTRY *pEntry;
+< #else
+1361d1356
+< #endif
+1372,1383d1366
+< #ifdef EFM_MISC_PATCH
+<         for (i = 0; i < MAX_LEN_OF_MAC_TABLE; i++)
+<         {
+<                 pEntry = &pAd->MacTab.Content[i];
+< 
+< //              if ((pEntry->Valid == FALSE) || (pEntry->Sst != SST_ASSOC))
+< //                      continue;
+<                 pEntry->TxBytes= 0;
+<                 pEntry->RxBytes= 0;
+<         }
+< #endif
+< 
+1945d1927
+< #ifndef EFM_MISC_PATCH
+1953d1934
+< #endif
+2196,2230d2176
+< #ifdef EFM_MISC_PATCH
+< VOID RTMPIoctlGetSiteSurveyStatus(
+<         IN      VOID *pAd,
+<         IN      RTMP_IOCTL_INPUT_STRUCT  *wrq)
+< {
+< 	PRTMP_ADAPTER   pAdapter = (PRTMP_ADAPTER)pAd;
+<         CHAR            *msg;
+<         INT             Status=0, i;
+< 
+<         os_alloc_mem(NULL, (PUCHAR *)&msg, 8);
+<         if (msg == NULL)
+<         {
+<                 DBGPRINT(RT_DEBUG_TRACE, ("RTMPIoctlGetSiteSurveyStatus - msg memory alloc fail.\n"));
+<                 return;
+<         }
+< 
+<         memset(msg, 0 ,8);
+<        // sprintf(msg,"%d\n",ApScanRunning(pAdapter));
+< 	sprintf(msg,"%d\n", pAdapter->Mlme.ApSyncMachine.CurrState); /* 0:AP_SYNC_IDLE , 1: AP_SCAN_LISTEN, 2: AP_SCAN_PENDING */
+<         wrq->u.data.length = strlen(msg);
+<         Status = copy_to_user(wrq->u.data.pointer, msg, wrq->u.data.length);
+<         os_free_mem(NULL, (PUCHAR)msg);
+< }
+< 
+< int Get_HTPhy_Rate( HTTRANSMIT_SETTING rate, char *str)
+< {
+<         ULONG rateval;
+< 
+<         getRate(rate,&rateval);
+<         sprintf(str, "%d", rateval);
+<         return 0;
+< }
+< #endif
+< 
+< 
+2293,2295d2238
+< #ifdef EFM_MISC_PATCH
+< #define MAC_LINE_LEN    (1+14+4+4+4+4+10+10+10+6+6+16)  /* "\n"+Addr+aid+psm+datatime+rxbyte+txbyte+current tx rate+last tx rate+"\n" */
+< #else
+2297d2239
+< #endif
+2308,2310d2249
+< #ifdef EFM_MISC_PATCH
+<        char str[64];
+< #endif
+2312d2250
+< #ifndef EFM_MISC_PATCH
+2359d2296
+< #endif
+2389,2392d2325
+< #ifdef EFM_MISC_PATCH
+<                         Get_HTPhy_Rate( pAd->MacTab.Content[i].HTPhyMode, str);
+<                         sprintf(msg+strlen(msg), "%-6s", str );
+< #else
+2394d2326
+< #endif
+2396,2400d2327
+< #ifdef EFM_MISC_PATCH
+<             sprintf(msg+strlen(msg),"%-11d",pAd->MacTab.Content[i].StaConnectTime); // ToDo
+<             sprintf(msg+strlen(msg),"%-11u",pAd->MacTab.Content[i].RxBytes); // ToDo
+<             sprintf(msg+strlen(msg),"%-11u\n",pAd->MacTab.Content[i].TxBytes); // ToDo
+< #else
+2404d2330
+< #endif
+2409,2414d2334
+< #ifdef EFM_MISC_PATCH
+<         wrq->u.data.length = strlen(msg);
+<         if (copy_to_user(wrq->u.data.pointer, msg, wrq->u.data.length))
+< #else
+< #endif
+< 
+4976d4895
+< 
+5000d4918
+< 
+5002d4919
+< 
+5006,5007d4922
+< 
+< 
+5066d4980
+< 
+Only in MT7610_ap/common: cmm_info.o
+diff -rw MT7610_ap/common/cmm_mac_pci.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/common/cmm_mac_pci.c
+1964d1963
+< #ifndef EFM_MISC_PATCH_XXX
+1966d1964
+< #endif
+1971d1968
+< #ifndef EFM_MISC_PATCH_XXX
+1973d1969
+< #endif
+2015d2010
+< #ifndef EFM_MISC_PATCH_XXX
+2017d2011
+< #endif
+Only in MT7610_ap/common: cmm_mac_pci.o
+diff -rw MT7610_ap/common/cmm_profile.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/common/cmm_profile.c
+338,340d337
+< #ifdef EFM_MISC_PATCH
+<     strcpy(temp_buf, "Default=");
+< #else
+342d338
+< #endif
+2457d2452
+< #ifndef CONFIG_EFM_PATCH
+2460c2455
+< #endif
+---
+> 			
+2778,2791d2772
+< #ifdef EFM_MISC_PATCH
+<                                 for (i = 0, macptr = rstrtok(tmpbuf,";"); macptr; macptr = rstrtok(NULL,";"), i++)
+<                                 {
+<                                  if (i >= pAd->ApCfg.BssidNum)
+<                                      break;
+< 
+<                                  if(simple_strtol(macptr, 0, 10) != 0)  //Enable
+<                                      pAd->ApCfg.MBSSID[i].IsolateInterStaTrafficBTNBSSID = TRUE;
+<                                  else //Disable
+<                                      pAd->ApCfg.MBSSID[i].IsolateInterStaTrafficBTNBSSID = FALSE;
+< 
+<                                  DBGPRINT(RT_DEBUG_TRACE, ("I/F(ra%d) NoForwarding=%d\n", i, pAd->ApCfg.MBSSID[i].IsolateInterStaTraffic));
+<                                 }
+< #else
+2798d2778
+< #endif
+Only in MT7610_ap/common: cmm_profile.o
+Only in MT7610_ap/common: cmm_radar.o
+Only in MT7610_ap/common: cmm_sanity.o
+Only in MT7610_ap/common: cmm_sync.o
+Only in MT7610_ap/common: cmm_tkip.o
+Only in MT7610_ap/common: cmm_wep.o
+Only in MT7610_ap/common: cmm_wpa.o
+Only in MT7610_ap/common: crypt_aes.o
+Only in MT7610_ap/common: crypt_arc4.o
+Only in MT7610_ap/common: crypt_hmac.o
+Only in MT7610_ap/common: crypt_md5.o
+Only in MT7610_ap/common: crypt_sha2.o
+Only in MT7610_ap/common: ee_efuse.o
+Only in MT7610_ap/common: ee_prom.o
+Only in MT7610_ap/common: eeprom.o
+diff -rw MT7610_ap/common/igmp_snoop.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/common/igmp_snoop.c
+984,1002d983
+< 
+< #ifdef EFM_MISC_PATCH
+<         if(IS_SSDP_MAC_ADDR(pSrcBufVA) || IS_MDNS_MAC_ADDR(pSrcBufVA))
+<         {
+< #if     0
+< printk("SSDP or MDNS -> Multicast : %02x:%02x:%02x:%02x:%02x:%02x\n",
+<                 pSrcBufVA[0],
+<                 pSrcBufVA[1],
+<                 pSrcBufVA[2],
+<                 pSrcBufVA[3],
+<                 pSrcBufVA[4],
+<                 pSrcBufVA[5] );
+< #endif
+< 
+<                 if(*ppGroupEntry) *ppGroupEntry = NULL;
+<                 return NDIS_STATUS_SUCCESS;
+<         }
+< #endif
+< 
+diff -rw MT7610_ap/common/mlme.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/common/mlme.c
+2960,2965d2959
+< 
+< 
+< #ifdef USE_MAC_TRY_TABLE
+< int process_macauth_trylist(char *mac);
+< #endif
+< 
+3009,3015d3002
+< 
+< 
+< #ifdef USE_MAC_TRY_TABLE
+<         /* if(pAd->PortCfg.MBSSID[0].AccessControlList.Policy) */
+<         process_macauth_trylist(pFrame->Hdr.Addr2);
+< #endif
+< 
+Only in MT7610_ap/common: mlme.o
+Only in MT7610_ap/common: ps.o
+Only in MT7610_ap/common: rt_channel.o
+diff -rw MT7610_ap/common/rt_led.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/common/rt_led.c
+70,77d69
+< #ifdef EFM_MISC_PATCH
+< VOID RTMPSetLEDStatus(
+<         IN PRTMP_ADAPTER        pAd,
+<         IN UCHAR                        Status)
+< {
+<         /* Wireless LED control is fully by App ( iwpriv ra0 set Led=0|1|2 ) */
+< }
+< #else
+362d353
+< #endif
+543,545d533
+< #ifdef EFM_MISC_PATCH
+<                 pLedCntl->LedPolarity = 0xADF8; /* 0x48 : Default ACT Blinking is OFF */
+< #else
+547d534
+< #endif
+Only in MT7610_ap/common: rt_os_util.o
+Only in MT7610_ap/common: rt_rf.o
+diff -rw MT7610_ap/common/rtmp_init.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/common/rtmp_init.c
+2628,2630d2627
+< #ifdef CONFIG_EFM_PATCH
+< 	pAd->ApCfg.bMACRepeaterEn = 0;
+< #else
+2632d2628
+< #endif
+Only in MT7610_ap/common: rtmp_init.o
+Only in MT7610_ap/common: rtmp_init_inf.o
+Only in MT7610_ap/common: rtmp_timer.o
+diff -rw MT7610_ap/common/scan.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/common/scan.c
+427c427,429
+< 			rv = ((pAd->Mlme.ApSyncMachine.CurrState == AP_SCAN_LISTEN) ? TRUE : FALSE);
+---
+> 		{
+> 			rv = ((pAd->Mlme.ApSyncMachine.CurrState != AP_SYNC_IDLE) ? TRUE : FALSE);
+> 		}
+Only in MT7610_ap/common: scan.o
+Only in MT7610_ap/common: spectrum.o
+Only in MT7610_ap/common: txpower.o
+Only in MT7610_ap/common: uapsd.o
+Only in MT7610_ap/common: vht.o
+diff -rw MT7610_ap/common/wsc.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/common/wsc.c
+7745,7748d7744
+< #ifdef EFM_MISC_PATCH
+<                 offset = (PCHAR) rtstrstr((PSTRING) cfgData, "Default=\n");
+<                 offset += strlen("Default=\n");
+< #else
+7751d7746
+< #endif
+Only in MT7610_ap/include: CVS
+Only in MT7610_ap/include/chip: CVS
+diff -rw MT7610_ap/include/chip/mt76x0.h /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/include/chip/mt76x0.h
+52,54d51
+< #ifdef EFM_MISC_PATCH
+< #define RF_OFFSET					0x1f800
+< #else
+56d52
+< #endif
+Only in MT7610_ap/include/iface: CVS
+diff -rw MT7610_ap/include/igmp_snoop.h /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/include/igmp_snoop.h
+50,56d49
+< 
+< #ifdef EFM_MISC_PATCH
+< #define IS_MDNS_MAC_ADDR(Addr)                  ((Addr[0] == 0x01) && (Addr[1] == 0x00) && (Addr[2] == 0x5e) && (Addr[3] == 0x00) && (Addr[4] == 0x00) && (Addr[5] == 0xfb))
+< #define IS_SSDP_MAC_ADDR(Addr)                  ((Addr[0] == 0x01) && (Addr[1] == 0x00) && (Addr[2] == 0x5e) && (Addr[3] == 0x7f) && (Addr[4] == 0xff) && (Addr[5] == 0xfa))
+< #endif
+< 
+< 
+Only in MT7610_ap/include/mac_ral: CVS
+Only in MT7610_ap/include/mac_ral/nmac: CVS
+diff -rw MT7610_ap/include/mac_ral/nmac/ral_nmac.h /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/include/mac_ral/nmac/ral_nmac.h
+995,996d994
+< #define LDO_CTRL_0                     0x006C
+< 
+Only in MT7610_ap/include/mac_ral/omac: CVS
+diff -rw MT7610_ap/include/mac_ral/rtmp_mac.h /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/include/mac_ral/rtmp_mac.h
+908a909,917
+> #define TX_PWR_CCK_1_2_MASK (0x3f)
+> #define TX_PWR_CCK_1_2(p) (((p) & 0x3f))
+> #define TX_PWR_CCK_5_11_MASK (0x3f << 8)
+> #define TX_PWR_CCK_5_11(p) (((p) & 0x3f) << 8)
+> #define TX_PWR_OFDM_6_9_MASK (0x3f << 16)
+> #define TX_PWR_OFDM_6_9(p) (((p) & 0x3f) << 16)
+> #define TX_PWR_OFDM_12_18_MASK (0x3f << 24)
+> #define TX_PWR_OFDM_12_18(p) (((p) & 0x3f) << 24)
+> 
+909a919
+> 
+910a921,929
+> #define TX_PWR_OFDM_24_36_MASK (0x3f)
+> #define TX_PWR_OFDM_24_36(p) (((p) & 0x3f))
+> #define TX_PWR_OFDM_48_MASK (0x3f << 8)
+> #define TX_PWR_OFDM_48(p) (((p) & 0x3f) << 8)
+> #define TX_PWR_HT_VHT_1SS_MCS_0_1_MASK (0x3f << 16)
+> #define TX_PWR_HT_VHT_1SS_MCS_0_1(p) (((p) & 0x3f) << 16)
+> #define TX_PWR_HT_VHT_1SS_MCS_2_3_MASK (0x3f << 24)
+> #define TX_PWR_HT_VHT_1SS_MCS_2_3(p) (((p) & 0x3f) << 24)
+> 
+911a931
+> 
+912a933,941
+> #define TX_PWR_HT_VHT_1SS_MCS_4_5_MASK (0x3f)
+> #define TX_PWR_HT_VHT_1SS_MCS_4_5(p) (((p) & 0x3f))
+> #define TX_PWR_HT_VHT_1SS_MCS_6_MASK (0x3f << 8)
+> #define TX_PWR_HT_VHT_1SS_MCS_6(p) (((p) & 0x3f) << 8)
+> #define TX_PWR_HT_MCS_8_9_VHT_2SS_0_1_MASK (0x3f << 16)
+> #define TX_PWR_HT_MCS_8_9_VHT_2SS_0_1(p) (((p) & 0x3f) << 16)
+> #define TX_PWR_HT_MCS_10_11_VHT_2SS_MCS_2_3_MASK (0x3f << 24)
+> #define TX_PWR_HT_MCS_10_11_VHT_2SS_MCS_2_3(p) (((p) & 0x3f) << 24)
+> 
+913a943
+> 
+914a945,954
+> #define TX_PWR_HT_MCS_12_13_VHT_2SS_MCS_4_5_MASK (0x3f)
+> #define TX_PWR_HT_MCS_12_13_VHT_2SS_MCS_4_5(p) (((p) & 0x3f))
+> #define TX_PWR_HT_MCS_14_VHT_2SS_MCS_6_MASK (0x3f << 8)
+> #define TX_PWR_HT_MCS_14_VHT_2SS_MCS_6(p) (((p) & 0x3f) << 8)
+> #define TX_PWR_HT_VHT_STBC_MCS_0_1_MASK (0x3f << 16)
+> #define TX_PWR_HT_VHT_STBC_MCS_0_1(p) (((p) & 0x3f) << 16)
+> #define TX_PWR_HT_VHT_STBC_MCS_2_3_MASK (0x3f << 24)
+> #define TX_PWR_HT_VHT_STBC_MCS_2_3(p) (((p) & 0x3f) << 24)
+> 
+> #define GF20_PORT_CFG       0x1374
+915a956
+> 
+916a958,966
+> #define TX_PWR_HT_VHT_STBC_MCS_4_5_MASK (0x3f)
+> #define TX_PWR_HT_VHT_STBC_MCS_4_5(p) (((p) & 0x3f))
+> #define TX_PWR_HT_VHT_STBC_MCS_6_MASK (0x3f << 8)
+> #define TX_PWR_HT_VHT_STBC_MCS_6(p) (((p) & 0x3f) << 8)
+> 
+> #define TX_PWR_CFG_0_EXT	0x1390
+> #define TX_PWR_CFG_1_EXT	0x1394
+> #define TX_PWR_CFG_2_EXT	0x1398
+> #define TX_PWR_CFG_3_EXT	0x139C
+917a968
+> 
+919a971
+> 
+920a973,981
+> #define TX_PWR_OFDM_54_MASK (0x3f)
+> #define TX_PWR_OFDM_54(p) (((p) & 0x3f))
+> #define TX_PWR_VHT_2SS_MCS_8_MASK (0x3f << 8)
+> #define TX_PWR_VHT_2SS_MCS_8(p) (((p) & 0x3f) << 8)
+> #define TX_PWR_HT_MCS_7_VHT_1SS_MCS_7_MASK (0x3f << 16)
+> #define TX_PWR_HT_MCS_7_VHT_1SS_MCS_7(p) (((p) & 0x3f) << 16)
+> #define TX_PWR_VHT_2SS_MCS_9_MASK (0X3f << 24)
+> #define TX_PWR_VHT_2SS_MCS_9(p) (((p) & 0x3f) << 24)
+> 
+921a983,989
+> #define TX_PWR_HT_MCS_15_VHT_2SS_MCS7_MASK (0x3f)
+> #define TX_PWR_HT_MCS_15_VHT_2SS_MCS7(p) (((p) & 0x3f))
+> #define TX_PWR_VHT_1SS_MCS_8_MASK (0x3f << 16)
+> #define TX_PWR_VHT_1SS_MCS_8(p) (((p) & 0x3f) << 16)
+> #define TX_PWR_VHT_1SS_MCS_9_MASK (0X3f << 24)
+> #define TX_PWR_VHT_1SS_MCS_9(p) (((p) & 0x3f) << 24)
+> 
+922a991,996
+> #define TX_PWR_HT_VHT_STBC_MCS_7_MASK (0x3f)
+> #define TX_PWR_HT_VHT_STBC_MCS_7(p) (((p) & 0x3f))
+> #define TX_PWR_VHT_STBC_MCS_8_MASK (0x3f << 16)
+> #define TX_PWR_VHT_STBC_MCS_8(p) (((p) & 0x3f) << 16)
+> #define TX_PWR_VHT_STBC_MCS_9_MASK (0x3f << 24)
+> #define TX_PWR_VHT_STBC_MCS_9(p) (((p) & 0x3f) << 24)
+Only in MT7610_ap/include/mcu: CVS
+Only in MT7610_ap/include/os: CVS
+diff -rw MT7610_ap/include/os/rt_drv.h /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/include/os/rt_drv.h
+69c69
+< #define AP_DRIVER_VERSION			"3.0.0.6"
+---
+> #define AP_DRIVER_VERSION			"3.0.0.7"
+diff -rw MT7610_ap/include/os/rt_linux.h /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/include/os/rt_linux.h
+150c150
+< #define AP_DRIVER_VERSION			"3.0.0.6"
+---
+> #define AP_DRIVER_VERSION			"3.0.0.7_rev2"
+diff -rw MT7610_ap/include/os/rt_os.h /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/include/os/rt_os.h
+53,54c53
+< //#ifdef DBG
+< #ifdef EFM_MISC_PATCH
+---
+> #ifdef DBG
+83,88d81
+< 
+< 
+< #ifdef EFM_MISC_PATCH
+< #define RTPRIV_IOCTL_GSITESURVEYSTATUS                                  (SIOCIWFIRSTPRIV + 0x1b)
+< #endif
+< 
+Only in MT7610_ap/include/phy: CVS
+diff -rw MT7610_ap/include/rt_os_net.h /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/include/rt_os_net.h
+397,402d396
+< 
+< #ifdef EFM_MISC_PATCH
+< #define RTMP_DRIVER_CENTRAL_CHANNEL_GET(__pAd, __Channel)                                                       \
+<         RTMP_COM_IoctlHandle(__pAd, NULL, CMD_RTPRIV_IOCTL_SIOCGIWFREQ_CENTRAL, 0, __Channel, 0)
+< #endif
+< 
+diff -rw MT7610_ap/include/rtmp.h /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/include/rtmp.h
+1362,1365d1361
+< #ifdef EFM_MISC_PATCH
+<         ULONG                               IsolateInterStaTrafficBTNBSSID;
+< #endif
+< 
+diff -rw MT7610_ap/include/rtmp_cmd.h /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/include/rtmp_cmd.h
+250,253d249
+< #ifdef EFM_MISC_PATCH
+<         CMD_RTPRIV_IOCTL_SIOCGIWFREQ_CENTRAL,
+< #endif
+< 
+Only in MT7610_ap: m
+Only in MT7610_ap/mac: CVS
+Only in MT7610_ap/mcu: .mcu.o.cmd
+Only in MT7610_ap/mcu: .mcu_and.o.cmd
+Only in MT7610_ap/mcu: CVS
+Only in MT7610_ap/mcu/bin: CVS
+Only in MT7610_ap/mcu: mcu.o
+Only in MT7610_ap/mcu: mcu_and.o
+Only in MT7610_ap/mgmt: .mgmt_entrytb.o.cmd
+Only in MT7610_ap/mgmt: .mgmt_ht.o.cmd
+Only in MT7610_ap/mgmt: .mgmt_hw.o.cmd
+Only in MT7610_ap/mgmt: .mgmt_vht.o.cmd
+Only in MT7610_ap/mgmt: CVS
+Only in MT7610_ap/mgmt: mgmt_entrytb.o
+Only in MT7610_ap/mgmt: mgmt_ht.o
+Only in MT7610_ap/mgmt: mgmt_hw.o
+Only in MT7610_ap/mgmt: mgmt_vht.o
+Only in MT7610_ap/naf: CVS
+Only in MT7610_ap/os: CVS
+Only in MT7610_ap/os/linux: .ap_ioctl.o.cmd
+Only in MT7610_ap/os/linux: .pci_main_dev.o.cmd
+Only in MT7610_ap/os/linux: .rt_linux.o.cmd
+Only in MT7610_ap/os/linux: .rt_main_dev.o.cmd
+Only in MT7610_ap/os/linux: .rt_pci_rbus.o.cmd
+Only in MT7610_ap/os/linux: .rt_proc.o.cmd
+Only in MT7610_ap/os/linux: .rt_profile.o.cmd
+Only in MT7610_ap/os/linux: .rt_rbus_pci_drv.o.cmd
+Only in MT7610_ap/os/linux: .rt_rbus_pci_util.o.cmd
+Only in MT7610_ap/os/linux: CVS
+diff -rw MT7610_ap/os/linux/ap_ioctl.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/os/linux/ap_ioctl.c
+60,61c60
+< //#ifdef DBG
+< #ifdef EFM_MISC_PATCH
+---
+> #ifdef DBG
+73,78d71
+< #ifdef EFM_MISC_PATCH
+< { RTPRIV_IOCTL_GSITESURVEYSTATUS,
+<   IW_PRIV_TYPE_CHAR | 1024, IW_PRIV_TYPE_CHAR | 1024 ,
+<   "get_scan_status"},
+< #endif
+< 
+106,109d98
+< #ifdef EFM_MISC_PATCH
+< VOID RTMPIoctlGetSiteSurveyStatus( IN      VOID   *pAdapter, IN      RTMP_IOCTL_INPUT_STRUCT   *wrq);
+< #endif
+< 
+222,225d210
+< #ifdef EFM_MISC_PATCH
+<                         RTMP_DRIVER_CENTRAL_CHANNEL_GET(pAd, &Channel);
+<                         wrqin->u.freq.e = Channel;
+< #else
+227d211
+< #endif
+396,401d379
+< 
+< #ifdef EFM_MISC_PATCH
+<                 case RTPRIV_IOCTL_GSITESURVEYSTATUS:
+<                         RTMPIoctlGetSiteSurveyStatus(pAd,wrq);
+<                         break;
+< #endif
+422,423c400
+< //#ifdef DBG
+< #ifdef EFM_MISC_PATCH
+---
+> #ifdef DBG
+Only in MT7610_ap/os/linux: ap_ioctl.o
+diff -rw MT7610_ap/os/linux/pci_main_dev.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/os/linux/pci_main_dev.c
+282d281
+< 
+285d283
+< 
+300,305d297
+< #ifdef EFM_MISC_PATCH
+< int wl_proc_init(void);
+< int wl_proc_exit(void);
+< #endif
+< 
+< 
+439,443d430
+< #ifdef EFM_MISC_PATCH
+<         wl_proc_init();
+< #endif
+< 
+< 
+514,517d500
+< 
+< #ifdef EFM_MISC_PATCH	
+< 	wl_proc_exit();
+< #endif
+Only in MT7610_ap/os/linux: pci_main_dev.o
+Only in MT7610_ap/os/linux: rt_linux.o
+Only in MT7610_ap/os/linux: rt_main_dev.o
+Only in MT7610_ap/os/linux: rt_pci_rbus.o
+diff -rw MT7610_ap/os/linux/rt_proc.c /home/mt7620/WifiDriver/MT7610_1x1_11ac/3.0.0.7/MT7610_ap/os/linux/rt_proc.c
+499,600d498
+< #ifdef USE_MAC_TRY_TABLE
+< #include "rtmp_def.h"
+< typedef struct auth_mac_s {
+<         unsigned char mac[8];
+<         int timestamp;
+< } auth_mac_t;
+< 
+< typedef struct auth_maclist_s {
+<         int count;
+<         auth_mac_t maclist[MAX_LEN_OF_MAC_TABLE];
+< } auth_maclist_t;
+< 
+< int macauth_add_trylist( auth_maclist_t *maclist, unsigned char *mac )
+< {
+<         int i;
+< 
+<         if( maclist->count >= MAX_LEN_OF_MAC_TABLE )
+<                 return -1;
+< 
+<         for( i = 0; i < maclist->count;i++)
+<         {
+<                 if(!memcmp(mac,maclist->maclist[i].mac,6))
+<                 {
+<                         maclist->maclist[i].timestamp = jiffies;
+<                         return 0;
+<                 }
+<         }
+< 
+<         /* new added */
+<         memcpy(maclist->maclist[i].mac, mac, 6 );
+<         maclist->maclist[i].timestamp = jiffies;
+<         maclist->count++;
+< 
+<         return 1;
+< }
+< int macauth_remove_trylist( auth_maclist_t *maclist, int idx)
+< {
+<         int i;
+< 
+<         maclist->count--;
+< 
+<         for( i = idx ; i < maclist->count; i++)
+<                 maclist->maclist[i]= maclist->maclist[i+1];
+< 
+<         return 1;
+< }
+< 
+< int macauth_timeout_list( auth_maclist_t *maclist, int timeout )
+< {
+<         int i, difftime;
+< 
+<         for( i = 0; i < maclist->count;)
+<         {
+<                 difftime = jiffies - maclist->maclist[i].timestamp;
+<                 if(difftime > timeout)
+<                         macauth_remove_trylist(maclist,i);
+<                 else
+<                         i++;
+<         }
+<         return 1;
+< }
+< auth_maclist_t try_mac_list;
+< 
+< 
+< int process_macauth_trylist(unsigned char *mac)
+< {
+<         char macstr[20];
+<         auth_maclist_t *maclist = &try_mac_list;
+<         macauth_add_trylist(maclist, mac);
+<         macauth_timeout_list(maclist, 120 * HZ);
+< 
+<         return 0;
+< }
+< 
+< 
+< 
+< static int proc_read_mac_try_list(char *buffer, char **start, off_t offset, int length, int *eof, void *data)
+< {
+<         char *p = buffer;
+<         int len, i;
+< 
+<         memcpy( p, &try_mac_list, sizeof(auth_maclist_t));
+<         p += sizeof(auth_maclist_t);
+< 
+<         len = p - buffer;
+<         if( len <= offset+length ) *eof = 1;
+<         *start = buffer + offset;
+<         len -= offset;
+<         if( len > length ) len = length;
+<         if( len < 0 ) len = 0;
+< 
+<         return len;
+< }
+< 
+< static int proc_write_mac_try_list( struct file *file, const char *buffer, u_long count, void *data )
+< {
+<         if(!strncmp(buffer,"clear", 5))
+<               try_mac_list.count = 0;
+<         return count;
+< }
+< #endif
+< 
+612,627d509
+< 
+< #ifdef USE_MAC_TRY_TABLE
+<         {
+<                 char name[128];
+<                 struct proc_dir_entry *proc_entry;
+< 
+<                 sprintf(name, "driver/wireless_mac_try_list.rai0");
+<                 proc_entry = create_proc_entry(name,0,0);
+<                 if(proc_entry)
+<                 {
+<                         proc_entry->write_proc=&proc_write_mac_try_list;
+<                         proc_entry->read_proc=&proc_read_mac_try_list;
+<                 }
+<         }
+< #endif
+< 
+643,648d524
+< 
+< #ifdef USE_MAC_TRY_TABLE
+<         remove_proc_entry("driver/wireless_mac_try_list.rai0", 0);
+< #endif
+< 
+< 
+Only in MT7610_ap/os/linux: rt_proc.o
+Only in MT7610_ap/os/linux: rt_profile.o
+Only in MT7610_ap/os/linux: rt_rbus_pci_drv.o
+Only in MT7610_ap/os/linux: rt_rbus_pci_util.o
+Only in MT7610_ap/phy: CVS
+Only in MT7610_ap/rate_ctrl: .alg_grp.o.cmd
+Only in MT7610_ap/rate_ctrl: .alg_legacy.o.cmd
+Only in MT7610_ap/rate_ctrl: .ra_ctrl.o.cmd
+Only in MT7610_ap/rate_ctrl: CVS
+Only in MT7610_ap/rate_ctrl: alg_grp.o
+Only in MT7610_ap/rate_ctrl: alg_legacy.o
+Only in MT7610_ap/rate_ctrl: ra_ctrl.o
+Only in MT7610_ap/tools: CVS
