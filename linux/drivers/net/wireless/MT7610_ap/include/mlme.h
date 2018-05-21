@@ -69,7 +69,13 @@
 #define SHORT_CHANNEL_TIME          90        /* unit: msec */
 #define MIN_CHANNEL_TIME            110        /* unit: msec, for dual band scan */
 #define MAX_CHANNEL_TIME            140       /* unit: msec, for single band scan */
+
+#ifdef EFM_MISC_PATCH
+#define FAST_ACTIVE_SCAN_TIME       70            /* Active scan waiting for probe response time */
+#else
 #define	FAST_ACTIVE_SCAN_TIME	    30 		  /* Active scan waiting for probe response time */
+#endif
+
 #define CW_MIN_IN_BITS              4         /* actual CwMin = 2^CW_MIN_IN_BITS - 1 */
 #define AUTO_CHANNEL_SEL_TIMEOUT		400		/* uint: msec */
 #define LINK_DOWN_TIMEOUT           20000      /* unit: msec */

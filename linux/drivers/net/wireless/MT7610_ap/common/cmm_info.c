@@ -2196,7 +2196,7 @@ VOID RTMPIoctlGetSiteSurvey(
 	wrq->u.data.length = strlen(msg);
 	Status = copy_to_user(wrq->u.data.pointer, msg, wrq->u.data.length);
 
-	DBGPRINT(RT_DEBUG_TRACE, ("RTMPIoctlGetSiteSurvey - wrq->u.data.length = %d\n", wrq->u.data.length));
+	DBGPRINT(RT_DEBUG_TRACE, ("RTMPIoctlGetSiteSurvey - wrq->u.data.length = %d BssNr = %d\n", wrq->u.data.length,pAdapter->ScanTab.BssNr));
 	os_free_mem(NULL, (PUCHAR)msg);	
 }
 #endif
